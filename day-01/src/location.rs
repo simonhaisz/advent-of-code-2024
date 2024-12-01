@@ -43,15 +43,28 @@ impl LocationPair {
 
         let mut total_score = 0;
 
+        let value_count_map = {
+            let mut value_count_map = HashMap::<i32, i32>::new();
+
+            for b in self.b.iter() {
+                let value = *b;
+                let count = value_count_map.entry(value).or_default();
+                *count += 1;
+            }
+
+            value_count_map
+        };
+
         for a in self.a.iter() {
             let value = *a;
             let score = value_score_map.entry(value).or_insert_with(|| {
-                let count = self.b
-                    .iter()
-                    .filter(|&b| value == *b)
-                    .count();
+                let count = value_count_map.get(&value);
 
-                (count as i32) * value
+                if let Some(count) = count {
+                    count * value
+                } else {
+                    0
+                }
             });
 
             total_score += *score;
