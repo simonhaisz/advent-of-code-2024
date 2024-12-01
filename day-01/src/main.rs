@@ -1,9 +1,11 @@
 mod location;
 
 use location::LocationPair;
-use utils::{part_selection, Part};
+use utils::{part_selection, Part, Timer};
 
 fn main() {
+    let _timer = Timer::new();
+    
     let text = std::fs::read_to_string("./day-01/input.txt").unwrap();
 
     let pair = LocationPair::from(text);
