@@ -1,6 +1,6 @@
 mod location;
 
-use location::LocationPair;
+use location::{LocationPair, Optimization};
 use utils::{part_selection, Part, Timer};
 
 fn main() {
@@ -25,7 +25,25 @@ fn part_1(pair: LocationPair) {
 }
 
 fn part_2(pair: LocationPair) {
-    let similarity_score = pair.similarity_score();
+    let optimization = optimization_selection();
+
+    println!("Optimization: {optimization:?}");
+
+    let similarity_score = pair.similarity_score(optimization);
 
     println!("{similarity_score}")
+}
+
+fn optimization_selection() -> Optimization {
+    let args = std::env::args().collect::<Vec<_>>();
+
+    if args.len() > 2 {
+        if args[2] == "--index" {
+            Optimization::Indexed
+        } else {
+            Optimization::None
+        }
+    } else {
+        Optimization::None
+    }
 }

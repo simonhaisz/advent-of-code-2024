@@ -5,6 +5,12 @@ pub struct LocationPair {
     b: Vec<i32>,
 }
 
+#[derive(Debug)]
+pub enum Optimization {
+    None,
+    Indexed,
+}
+
 impl LocationPair {
     pub fn new(a: Vec<i32>, b: Vec<i32>) -> Self {
         assert_eq!(a.len(), b.len(), "List pairs must match in length");
@@ -38,39 +44,54 @@ impl LocationPair {
             .sum()
     }
 
-    pub fn similarity_score(&self) -> i32 {
-        let mut value_score_map = HashMap::<i32, i32>::new();
+    pub fn similarity_score(&self, optimization: Optimization) -> i32 {
+        match optimization {
+            Optimization::None => {
+                let mut total_score = 0;
 
-        let mut total_score = 0;
+                for a in self.a.iter() {
+                    let value = *a;
+                    let match_count = self.b.iter().filter(|&b| *b == value).count() as i32;
 
-        let value_count_map = {
-            let mut value_count_map = HashMap::<i32, i32>::new();
-
-            for b in self.b.iter() {
-                let value = *b;
-                let count = value_count_map.entry(value).or_default();
-                *count += 1;
-            }
-
-            value_count_map
-        };
-
-        for a in self.a.iter() {
-            let value = *a;
-            let score = value_score_map.entry(value).or_insert_with(|| {
-                let count = value_count_map.get(&value);
-
-                if let Some(count) = count {
-                    count * value
-                } else {
-                    0
+                    total_score += value * match_count;
                 }
-            });
+                total_score
+            },
+            Optimization::Indexed => {
+                let mut value_score_map = HashMap::<i32, i32>::new();
 
-            total_score += *score;
+                let mut total_score = 0;
+        
+                let value_count_map = {
+                    let mut value_count_map = HashMap::<i32, i32>::new();
+        
+                    for b in self.b.iter() {
+                        let value = *b;
+                        let count = value_count_map.entry(value).or_default();
+                        *count += 1;
+                    }
+        
+                    value_count_map
+                };
+        
+                for a in self.a.iter() {
+                    let value = *a;
+                    let score = value_score_map.entry(value).or_insert_with(|| {
+                        let count = value_count_map.get(&value);
+        
+                        if let Some(count) = count {
+                            count * value
+                        } else {
+                            0
+                        }
+                    });
+        
+                    total_score += *score;
+                }
+        
+                total_score
+            }
         }
-
-        total_score
     }
 }
 
@@ -139,7 +160,7 @@ mod tests {
     }
 
     #[test]
-    fn example_similarity_score() {
+    fn example_similarity_score_n_squared() {
         let text = r"
 3   4
 4   3
@@ -151,7 +172,25 @@ mod tests {
 
         let pair = LocationPair::from(text);
 
-        let similarity_score = pair.similarity_score();
+        let similarity_score = pair.similarity_score(Optimization::None);
+
+        assert_eq!(similarity_score, 31);
+    }
+
+    #[test]
+    fn example_similarity_score_indexed() {
+        let text = r"
+3   4
+4   3
+2   5
+1   3
+3   9
+3   3
+        ".trim().to_string();
+
+        let pair = LocationPair::from(text);
+
+        let similarity_score = pair.similarity_score(Optimization::Indexed);
 
         assert_eq!(similarity_score, 31);
     }
