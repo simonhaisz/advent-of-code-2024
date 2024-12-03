@@ -134,10 +134,10 @@ xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))
 xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))
         ".trim();
 
-        let memory = MemoryAlways::from(text).memory;
+        let memory = MemoryDoDont::from(text).memory;
 
-        assert_eq!(memory.instructions.len(), 4);
+        assert_eq!(memory.instructions.len(), 2);
         assert_eq!(memory.instructions[0], Multiply(2, 4));
-        assert_eq!(memory.instructions[3], Multiply(8, 5));
+        assert_eq!(memory.instructions[1], Multiply(8, 5));
     }
 }
