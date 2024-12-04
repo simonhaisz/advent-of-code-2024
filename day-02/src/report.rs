@@ -28,7 +28,11 @@ impl Report {
     }
 
     pub fn safety_check(&self) -> Safety {
-        levels_safety_check(&self.levels)
+        let result = levels_safety_check(&self.levels);
+        match result {
+            Ok(_) => Safety::Safe,
+            Err(_) => Safety::Unsafe,
+        }
     }
 
     pub fn is_safe(&self) -> bool {
@@ -40,7 +44,7 @@ impl Report {
         }
     }
 
-    pub fn tolerance_safety_check(&self) -> Safety {
+    pub fn brute_force_tolerance_safety_check(&self) -> Safety {
         let mut skip_index: Option<usize> = None;
 
         loop {
@@ -51,9 +55,9 @@ impl Report {
                 }
                 levels.remove(i);
             }
-            let safety = levels_safety_check(&levels);
+            let result = levels_safety_check(&levels);
 
-            if safety == Safety::Safe {
+            if result.is_ok() {
                 return Safety::Safe;
             }
 
@@ -67,8 +71,45 @@ impl Report {
         Safety::Unsafe
     }
 
-    pub fn is_safe_with_tolerance(&self) -> bool {
-        let safety = self.tolerance_safety_check();
+    pub fn is_safe_with_brute_force_tolerance(&self) -> bool {
+        let safety = self.brute_force_tolerance_safety_check();
+
+        match safety {
+            Safety::Safe => true,
+            Safety::Unsafe => false,
+        }
+    }
+
+    pub fn optimized_tolerance_safety_check(&self) -> Safety {
+        let mut error_index: Option<usize> = None;
+        let mut error_offset = 0;
+
+        loop {
+            let mut levels = self.levels.clone();
+            if let Some(index) = error_index {
+                if error_offset > 2 || error_offset > index {
+                    break;
+                }
+                levels.remove(index - error_offset);
+            }
+            let result = levels_safety_check(&levels);
+
+            if result.is_ok() {
+                return Safety::Safe;
+            } else if let Err(index) = result {
+                if error_index.is_none() {
+                    error_index = Some(index);
+                } else {
+                    error_offset += 1;
+                }
+            }
+        }
+
+        Safety::Unsafe
+    }
+
+    pub fn is_safe_with_optimized_tolerance(&self) -> bool {
+        let safety = self.optimized_tolerance_safety_check();
 
         match safety {
             Safety::Safe => true,
@@ -77,15 +118,15 @@ impl Report {
     }
 }
 
-fn levels_safety_check(levels: &[i32]) -> Safety {
+fn levels_safety_check(levels: &[i32]) -> Result<(), usize> {
     let mut previous_direction = None;
 
     let mut previous = None;
-    for level in levels.iter() {
+    for (index, level) in levels.iter().enumerate() {
         if let Some(previous) = previous {
             let delta: i32 = *level - previous;
             if delta.abs() > 3 || delta == 0 {
-                return Safety::Unsafe;
+                return Err(index);
             }
 
             let current_direction =  if delta > 0 {
@@ -100,7 +141,7 @@ fn levels_safety_check(levels: &[i32]) -> Safety {
                 if current_direction == Direction::None {
                     previous_direction = Some(current_direction);
                 } else if pd != current_direction {
-                    return Safety::Unsafe;
+                    return Err(index);
                 }
             } else {
                 previous_direction = Some(current_direction);
@@ -110,7 +151,7 @@ fn levels_safety_check(levels: &[i32]) -> Safety {
         previous = Some(*level);
     }
 
-    Safety::Safe
+    Ok(())
 }
 
 impl From<&str> for Report {
@@ -181,9 +222,47 @@ mod tests {
         let reports = parse_reports(text);
 
         let safe_count = reports.iter()
-            .filter(|&r| r.is_safe_with_tolerance())
+            .filter(|&r| r.is_safe_with_brute_force_tolerance())
             .count();
 
         assert_eq!(safe_count, 4);
+    }
+
+    #[test]
+    fn example_safety_with_optimized_tolerance() {
+        let text = r"
+7 6 4 2 1
+1 2 7 8 9
+9 7 6 2 1
+1 3 2 4 5
+8 6 4 4 1
+1 3 6 7 9
+        ".trim();
+        let reports = parse_reports(text);
+
+        let safe_count = reports.iter()
+            .filter(|&r| r.is_safe_with_optimized_tolerance())
+            .count();
+
+        assert_eq!(safe_count, 4);
+    }
+
+    #[test]
+    fn compare_real_tolerances() {
+        let text = std::fs::read_to_string("./input.txt").unwrap();
+
+        let reports = parse_reports(&text);
+
+        let brute_force_count = reports.iter()
+            .filter(|&r| r.is_safe_with_brute_force_tolerance())
+            .count();
+
+        assert_eq!(brute_force_count, 311);
+
+        let optimized_force_count = reports.iter()
+            .filter(|&r| r.is_safe_with_optimized_tolerance())
+            .count();
+
+        assert_eq!(optimized_force_count, 311);
     }
 }
