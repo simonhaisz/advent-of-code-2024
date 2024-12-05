@@ -182,7 +182,7 @@ impl WordSearch {
                         break;
                     }
                     
-                    let right_index = self.grid.get_index((&right_position)).unwrap();
+                    let right_index = self.grid.get_index(&right_position).unwrap();
                     if get_right_search_char(center_offset) != get_input_char(right_index) {
                         break;
                     }
