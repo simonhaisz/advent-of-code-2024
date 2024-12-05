@@ -96,6 +96,24 @@
             },
             "args": [],
             "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'day-04'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=day-04",
+                    "--package=day-04"
+                ],
+                "filter": {
+                    "name": "day-04",
+                    "kind": "bin"
+                }
+            },
+            "args": ["--part-2"],
+            "cwd": "${workspaceFolder}"
         }
     ]
 }

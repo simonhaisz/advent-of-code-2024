@@ -6,6 +6,10 @@ pub enum Part {
 pub fn part_selection() -> Part {
     let args: Vec<_> = std::env::args().collect();
 
+    if args.len() < 2 {
+        panic!("Missing part selection argument")
+    }
+
     let selection = &args[1];
 
     match selection.as_str() {

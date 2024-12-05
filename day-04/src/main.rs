@@ -25,6 +25,10 @@ fn part_1(input: &str) {
     println!("{count}");
 }
 
-fn part_2(_input: &str) {
-    unimplemented!()
+fn part_2(input: &str) {
+    let word_search = WordSearch::new("MAS", input);
+
+    let count = word_search.search_x_all();
+
+    println!("{count}");
 }
