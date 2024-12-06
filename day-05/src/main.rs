@@ -24,6 +24,10 @@ fn part_1(input: &str) {
     println!("{count}");
 }
 
-fn part_2(_input: &str) {
-    unimplemented!()
+fn part_2(input: &str) {
+    let mut page_ordering = PageOrdering::from(input);
+
+    let (_, count) = page_ordering.fix_order_printing();
+
+    println!("{count}");
 }

@@ -4,6 +4,7 @@ pub type Printing = Vec<u32>;
 
 trait ValidateRules<Rule> {
     fn validate(&self, rules: &[Rule]) -> bool;
+    fn fix(&mut self, rules: &[Rule]) -> usize;
 }
 
 impl ValidateRules<PageOrderRule> for Printing {
@@ -22,6 +23,29 @@ impl ValidateRules<PageOrderRule> for Printing {
         }
 
         true
+    }
+
+    fn fix(&mut self, rules: &[PageOrderRule]) -> usize {
+        let mut moved_count = 0;
+
+        for rule in rules {
+            let left_index = self.iter().position(|&p| p == rule.0);
+            let right_index = self.iter().position(|&p| p == rule.1);
+
+            if left_index.is_some() & right_index.is_some() {
+                let left_index = left_index.unwrap();
+                let right_index = right_index.unwrap();
+                if left_index >= right_index {
+                    
+                    let right = self.remove(right_index);
+                    self.insert(left_index, right);
+
+                    moved_count += 1;
+                }
+            }
+        }
+
+        moved_count
     }
 }
 
@@ -68,6 +92,33 @@ impl PageOrdering {
         }
 
         (count, total)
+    }
+
+    pub fn fix_order_printing(&mut self) -> (usize, u32) {
+        let mut fixed_count = 0;
+        let mut fixed_total = 0;
+
+        for printing in self.printings.iter_mut() {
+            let count = printing.fix(&self.order_rules);
+            fixed_count += count;
+
+            if count > 0 {
+
+                while !printing.validate(&self.order_rules) {
+                    let count = printing.fix(&self.order_rules);
+                    if count == 0 {
+                        panic!("Page order is invalid but fix does not move any pages");
+                    }
+                    fixed_count += count;
+                }
+
+                let mid_point = printing.len() / 2;
+
+                fixed_total += printing[mid_point];
+            }
+        }
+
+        (fixed_count, fixed_total)
     }
 
 }
@@ -193,5 +244,16 @@ mod tests {
         assert_eq!(valid_count, 3);
 
         assert_eq!(total, 143)
+    }
+
+    # [test]
+    fn fix_example() {
+        let mut page_ordering = PageOrdering::from(EXAMPLE);
+
+        let (fixed_count, fixed_total) = page_ordering.fix_order_printing();
+
+        assert_eq!(5, fixed_count);
+
+        assert_eq!(123, fixed_total);
     }
 }
