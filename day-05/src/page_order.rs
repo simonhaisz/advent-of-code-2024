@@ -13,7 +13,7 @@ impl ValidateRules<PageOrderRule> for Printing {
             let left_index = self.iter().position(|&p| p == rule.0);
             let right_index = self.iter().position(|&p| p == rule.1);
 
-            if left_index.is_some() & right_index.is_some() {
+            if left_index.is_some() && right_index.is_some() {
                 let left_index = left_index.unwrap();
                 let right_index = right_index.unwrap();
                 if left_index >= right_index {
@@ -32,7 +32,7 @@ impl ValidateRules<PageOrderRule> for Printing {
             let left_index = self.iter().position(|&p| p == rule.0);
             let right_index = self.iter().position(|&p| p == rule.1);
 
-            if left_index.is_some() & right_index.is_some() {
+            if left_index.is_some() && right_index.is_some() {
                 let left_index = left_index.unwrap();
                 let right_index = right_index.unwrap();
                 if left_index >= right_index {
