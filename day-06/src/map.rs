@@ -8,29 +8,55 @@ pub struct Map {
     grid: Grid,
 }
 
+#[derive(PartialEq, Eq)]
+pub enum MovementEnd {
+    Exit,
+    Loop,
+}
+
 impl Map {
-    pub fn predict_guard(&self) -> (Vec<usize>, HashSet<usize>) {
+    pub fn predict_guard(&self) -> (Vec<usize>, HashSet<usize>, MovementEnd) {
 
         let mut guard = self.starting_guard.clone();
         let mut guard_indices = vec![guard.index];
+        let mut unique_guard_indices = HashSet::new();
+        unique_guard_indices.insert(guard.index);
 
-        loop {
+        let mut loop_counter = 0;
+
+        let movement_end = loop {
             let (new_index, movement, hit_obstacle) = self.move_guard(&guard);
 
             guard.index = new_index;
 
             guard_indices.extend(&movement);
 
+            let previous_unique_count = unique_guard_indices.len();
+
+            unique_guard_indices.extend(&movement);
+
+            let current_unique_count = unique_guard_indices.len();
+
             if hit_obstacle {
+                if movement.len() > 0 && previous_unique_count == current_unique_count {
+                    loop_counter += 1;
+                } else if previous_unique_count != current_unique_count {
+                    loop_counter = 0;
+                }
+
+                if loop_counter == 4 {
+                    break MovementEnd::Loop;
+                }
+
                 guard.direction = guard.direction.clockwise_orthogonal();
             } else {
-                break;
+                break MovementEnd::Exit;
             }
-        }
 
-        let unique_guard_indices = guard_indices.clone().into_iter().collect::<HashSet<_>>();
 
-        (guard_indices, unique_guard_indices)
+        };
+
+        (guard_indices, unique_guard_indices, movement_end)
     }
 
     fn move_guard(&self, guard: &Guard) -> (usize, Vec<usize>, bool) {
@@ -154,6 +180,44 @@ impl Map {
             (end_index, distance, true)
         }
     }
+
+    pub fn force_loop_locations(&self) -> Vec<usize> {
+        let mut force_loop_obstacle_locations = vec![];
+
+        let (_, unique_guard_indicies, movement_end) = self.predict_guard();
+
+        if movement_end == MovementEnd::Exit {
+            for guard_movement_index in unique_guard_indicies.into_iter() {
+                if self.starting_guard.index == guard_movement_index {
+                    continue;
+                }
+
+                let alternate_map = self.alternate(guard_movement_index);
+
+                let (_, _, alternate_end) = alternate_map.predict_guard();
+
+                if alternate_end == MovementEnd::Loop {
+                    // let position = self.grid.get_position(guard_movement_index).unwrap();
+                    // println!("Loop caused by obstruction at ({}. {})", position.0, position.1);
+                    force_loop_obstacle_locations.push(guard_movement_index);
+                }
+            }
+        }
+
+        force_loop_obstacle_locations
+    }
+
+    fn alternate(&self, new_obstacle_index: usize) -> Self {
+        let starting_guard = self.starting_guard.clone();
+
+        let mut obstacle_indices = self.obstacle_indices.clone();
+        obstacle_indices.push(new_obstacle_index);
+        obstacle_indices.sort();
+
+        let grid = self.grid.clone();
+
+        Self { starting_guard, obstacle_indices, grid }
+    }
 }
 
 #[derive(Clone)]
@@ -183,8 +247,6 @@ impl From<&str> for Map {
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
-
     use super::*;
 
     const EXAMPLE: &'static str = r"
@@ -213,7 +275,7 @@ mod test {
             println!("Obstacle position ({}, {})", obstacle_postion.0, obstacle_postion.1);
         }
 
-        let (guard_indexes, guard_unique_indexes) = map.predict_guard();
+        let (guard_indexes, guard_unique_indexes, _) = map.predict_guard();
 
         let guard_positions = guard_indexes.iter().map(|i| map.grid.get_position(*i).unwrap()).collect::<Vec<_>>();
 
@@ -224,5 +286,14 @@ mod test {
         let unique_guard_positions = guard_unique_indexes.into_iter().collect::<HashSet<_>>();
 
         assert_eq!(unique_guard_positions.len(), 41);
+    }
+
+    #[test]
+    fn forced_loop_example() {
+        let map = Map::from(EXAMPLE);
+
+        let locations = map.force_loop_locations();
+
+        assert_eq!(locations.len(), 6);
     }
 }

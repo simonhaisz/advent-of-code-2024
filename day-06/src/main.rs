@@ -19,11 +19,15 @@ fn main() {
 fn part_1(input: &str) {
     let map = Map::from(input);
 
-    let (_, unique_guard_indixes) = map.predict_guard();
+    let (_, unique_guard_indixes, _) = map.predict_guard();
 
     println!("{}", unique_guard_indixes.len());
 }
 
-fn part_2(_input: &str) {
-    unimplemented!()
+fn part_2(input: &str) {
+    let map = Map::from(input);
+
+    let locations = map.force_loop_locations();
+
+    println!("{}", locations.len());
 }

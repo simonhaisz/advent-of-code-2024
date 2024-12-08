@@ -83,7 +83,7 @@ impl Position {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Grid {
     pub row_count: i32,
     pub column_count: i32,
