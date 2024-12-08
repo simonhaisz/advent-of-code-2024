@@ -1,7 +1,6 @@
 use utils::{part_selection, Part, Timer};
 use word_search::WordSearch;
 
-mod grid;
 mod word_search;
 
 fn main() {

@@ -1,4 +1,4 @@
-use crate::grid::{Direction, Grid, Position};
+use utils::{Direction, Grid, Position};
 
 pub struct WordSearch {
     search_text: String,
@@ -9,7 +9,7 @@ pub struct WordSearch {
 impl WordSearch {
     pub fn new(search_text: &str, input_text: &str) -> Self {
         assert!(search_text.len() > 0);
-        let (flattened_input, grid) = process_input(input_text);
+        let (flattened_input, grid) = Grid::parse_input(input_text);
 
         let search_text = search_text.to_string();
 
@@ -207,36 +207,6 @@ impl WordSearch {
     }
 }
 
-#[cfg(windows)]
-const LINE_ENDING: &'static str = "\r\n";
-#[cfg(not(windows))]
-const LINE_ENDING: &'static str = "\n";
-
-fn process_input(input_text: &str) -> (String, Grid) {
-    let input_text = input_text.trim();
-    let found_new_lines = input_text.match_indices(LINE_ENDING).collect::<Vec<_>>();
-    assert!(found_new_lines.len() > 0, "Input text requires multiple lines");
-    let row_count = found_new_lines.len() + 1; // assume trim is called so there is no final new-line
-
-    let line_ending_length = LINE_ENDING.len();
-
-    let mut column_count = None;
-
-    for (index, (new_line, _)) in found_new_lines.into_iter().enumerate() {
-        if column_count.is_none() {
-            column_count = Some(new_line)
-        } else if let Some(column_count) = column_count {
-            assert_eq!((index + 1) * column_count + line_ending_length * index, new_line);
-        }
-    }
-
-    let column_count = column_count.unwrap();
-
-    let grid = Grid::new(row_count as i32, column_count as i32);
-
-    (input_text.replace(LINE_ENDING, ""), grid)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -254,17 +224,9 @@ MAMMMXMMMM
 MXMXAXMASX
     ";
 
-    fn platform_example() -> String {
-        if cfg!(windows) {
-            EXAMPLE.replace("\n", "\r\n")
-        } else {
-            EXAMPLE.to_string()
-        }
-    }
-
     #[test]
     fn process_input_example() {
-        let (flattened_input, grid) = process_input(&platform_example());
+        let (flattened_input, grid) = Grid::parse_input(&EXAMPLE);
 
         assert_eq!(flattened_input.len(), 100);
         assert_eq!(grid.row_count, 10);
@@ -273,7 +235,7 @@ MXMXAXMASX
 
     #[test]
     fn search_example() {
-        let word_search = WordSearch::new("XMAS", &platform_example());
+        let word_search = WordSearch::new("XMAS", EXAMPLE);
 
         let position = Position(4, 0);
         let found_directions = word_search.search(&position);
@@ -284,7 +246,7 @@ MXMXAXMASX
 
     #[test]
     fn search_all_example() {
-        let word_search = WordSearch::new("XMAS", &platform_example());
+        let word_search = WordSearch::new("XMAS", EXAMPLE);
 
         let count = word_search.search_all();
 
@@ -293,7 +255,7 @@ MXMXAXMASX
 
     #[test]
     fn search_x_example() {
-        let word_search = WordSearch::new("MAS", &platform_example());
+        let word_search = WordSearch::new("MAS", EXAMPLE);
 
         let position = Position(1, 2);
         let found_matches = word_search.search_x(&position);
@@ -303,7 +265,7 @@ MXMXAXMASX
 
     #[test]
     fn search_x_all_example() {
-        let word_search = WordSearch::new("MAS", &platform_example());
+        let word_search = WordSearch::new("MAS", EXAMPLE);
 
         let count = word_search.search_x_all();
 
