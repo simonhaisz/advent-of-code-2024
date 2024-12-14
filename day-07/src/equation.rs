@@ -59,20 +59,6 @@ impl Equation {
 
         false
     }
-
-    pub fn possible(&self) -> bool {
-        let count = self.right_hand_values.len() - 1;
-
-        let add = self.test(&Operator::Add.generate(count));
-        let multiply = self.test(&Operator::Multiply.generate(count));
-
-        let min = add.min(multiply);
-        let max = add.max(multiply);
-
-        let lhv = self.left_hand_value;
-
-        lhv >= min && lhv <= max
-    }
 }
 
 impl From<&str> for Equation {

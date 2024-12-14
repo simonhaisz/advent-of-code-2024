@@ -6,38 +6,6 @@ pub enum Operator {
 }
 
 impl Operator {
-    pub fn from(value: u8) -> Operator {
-        match value {
-            0 => Operator::Add,
-            1 => Operator::Multiply,
-            _ => panic!("Invalid value {value} - must be 0 or 1")
-        }
-    }
-
-    pub fn all() -> &'static [Operator] {
-        &[
-            Operator::Add,
-            Operator::Multiply,
-        ]
-    }
-
-    pub fn generate(&self, count: usize) -> Vec<Operator> {
-        let mut operators = vec!{};
-
-        for _ in 0..count {
-            operators.push(*self);
-        }
-        operators
-    }
-
-    pub fn toggle(&self) -> Operator {
-        match *self {
-            Operator::Add => Operator::Multiply,
-            Operator::Multiply => Operator::Add,
-            _ => unimplemented!(),
-        }
-    }
-
     fn increment(&mut self) -> bool {
         match *self {
             Operator::Add => *self = Operator::Multiply,
