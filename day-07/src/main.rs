@@ -20,11 +20,15 @@ fn main() {
 fn part_1(input: &str) {
     let calibration = Calibration::from(input);
 
-    let result = calibration.result();
+    let result = calibration.result_binary();
 
     println!("{result}");
 }
 
-fn part_2(_input: &str) {
-    unimplemented!();
+fn part_2(input: &str) {
+    let calibration = Calibration::from(input);
+
+    let result = calibration.result_trinary();
+
+    println!("{result}");
 }
