@@ -19,11 +19,15 @@ fn main() {
 fn part_1(input: &str) {
     let array = Array::from(input);
 
-    let locations = array.find_unique_antinode_locations();
+    let locations = array.find_unique_antinode_locations(array::AntinodeRule::TwiceDistance);
 
     println!("{}", locations.len());
 }
 
-fn part_2(_input: &str) {
-    unimplemented!()
+fn part_2(input: &str) {
+    let array = Array::from(input);
+
+    let locations = array.find_unique_antinode_locations(array::AntinodeRule::Inline);
+
+    println!("{}", locations.len());
 }
