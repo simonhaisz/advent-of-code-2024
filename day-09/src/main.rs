@@ -12,13 +12,22 @@ fn main() {
 
     match part {
         Part::One => part_1(&text),
-        Part::Two => unimplemented!(),
+        Part::Two => part_2(&text),
     }
 }
 
 fn part_1(input: &str) {
     let disk = Disk::from(input);
-    let disk = disk.compact();
+    let disk = disk.compact_blocks();
+
+    let checksum = disk.checksum();
+
+    println!("{checksum}");
+}
+
+fn part_2(input: &str) {
+    let disk = Disk::from(input);
+    let disk = disk.compact_files();
 
     let checksum = disk.checksum();
 
