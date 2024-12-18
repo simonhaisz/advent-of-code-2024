@@ -11,18 +11,37 @@ pub struct Map {
     destination_locations: Vec<usize>
 }
 
+#[derive(Clone, Copy)]
+pub enum FindTrailRule {
+    Any,
+    All
+}
+
 impl Map {
-    pub fn find_trailhead_trails(&self) -> HashMap<usize, Vec<Path>> {
+    pub fn find_trailhead_trails(&self, rule: FindTrailRule) -> HashMap<usize, Vec<Path>> {
         let mut trailhead_trails: HashMap<usize, Vec<Path>> = HashMap::new();
 
         for trailhead in self.trailhead_locations.iter() {
             for destination in self.destination_locations.iter() {
-                let trail = find_longest_trail(&self.grid, &self.flattened_topography, *trailhead, *destination);
+                match rule {
+                    FindTrailRule::Any => {
+                        let trail = find_any_trail(&self.grid, &self.flattened_topography, *trailhead, *destination);
 
-                if let Some(trail) = trail {
-                    let trails = trailhead_trails.entry(*trailhead).or_default();
-                    trails.push(trail);
+                        if let Some(trail) = trail {
+                            let trails = trailhead_trails.entry(*trailhead).or_default();
+                            trails.push(trail);
+                        }
+                    },
+                    FindTrailRule::All => {
+                        let found_trails = find_trails(&self.grid, &self.flattened_topography, *trailhead, *destination);
+
+                        for trail in found_trails.into_iter() {
+                            let existing_trails = trailhead_trails.entry(*trailhead).or_default();
+                            existing_trails.push(trail);
+                        }
+                    }
                 }
+
             }
         }
 
@@ -30,7 +49,7 @@ impl Map {
     }
 }
 
-pub fn find_longest_trail(grid: &Grid, flattened_topography: &str, start: usize, end: usize) -> Option<Path> {
+pub fn find_any_trail(grid: &Grid, flattened_topography: &str, start: usize, end: usize) -> Option<Path> {
     let mut trails: BinaryHeap<Location> = BinaryHeap::new();
     trails.push(Location::from(start));
 
@@ -112,7 +131,7 @@ impl Ord for Location {
 
 
 
-pub fn find_trails(grid: &Grid, flattened_topography: &str, start: usize, destination: usize) -> Vec<Path> {
+pub fn find_trails(grid: &Grid, flattened_topography: &str, start: usize, end: usize) -> Vec<Path> {
     let mut final_paths = vec![];
 
     let mut working_paths = vec![];
@@ -125,10 +144,9 @@ pub fn find_trails(grid: &Grid, flattened_topography: &str, start: usize, destin
 
         let last = *path.last().unwrap();
 
-        if last == destination {
-            // do nothing?
+        if last == end {
             final_paths.push(path);
-            continue;;
+            continue;
         }
 
         let last_position = grid.get_position(last).unwrap();
@@ -137,13 +155,12 @@ pub fn find_trails(grid: &Grid, flattened_topography: &str, start: usize, destin
         for direction in Direction::orthogonal() {
             let adjacent_position = last_position.adjacent(*direction);
             if !grid.validate_position(&adjacent_position, false) {
-                continue;;
+                continue;
             }
-            let adjacent_value = flattened_topography.chars().nth(last).unwrap();
+            let adjacent = grid.get_index(&adjacent_position).unwrap();
+            let adjacent_value = flattened_topography.chars().nth(adjacent).unwrap();
 
             if valid_move(last_value, adjacent_value) {
-                let adjacent = grid.get_index(&adjacent_position).unwrap();
-
                 if path.contains(&adjacent) {
                     continue;
                 }
@@ -160,13 +177,23 @@ pub fn find_trails(grid: &Grid, flattened_topography: &str, start: usize, destin
 }
 
 fn valid_move(from: char, to: char) -> bool {
-    let from = from.to_digit(10).unwrap();
-    let to = to.to_digit(10).unwrap();
+    if to.is_digit(10) {
+        let from = from.to_digit(10).unwrap();
+        let to = to.to_digit(10).unwrap();
 
-    to > from && to - from == 1
+        to > from && to - from == 1
+    } else {
+        false
+    }
 }
 
 pub fn score_trails(trails: &HashMap<usize, Vec<Path>>) -> usize {
+    trails.values()
+        .map(|p| p.len())
+        .sum()
+}
+
+pub fn rate_trails(trails: &HashMap<usize, Vec<Path>>) -> usize {
     trails.values()
         .map(|p| p.len())
         .sum()
@@ -197,29 +224,17 @@ impl From<&str> for Map {
 mod tests {
     use super::*;
 
-    const BASIC_EXAMPLE: &'static str = r"
+    #[test]
+    fn basic_example() {
+        let input = r"
 0123
 1234
 8765
 9876
-    ";
+        ".trim();
+        let map = Map::from(input);
 
-    const SIMPLE_EXAMPLE : &'static str = r"
-89010123
-78121874
-87430965
-96549874
-45678903
-32019012
-01329801
-10456732
-    ";
-
-    #[test]
-    fn basic_example() {
-        let map = Map::from(BASIC_EXAMPLE);
-
-        let trailhead_trails = map.find_trailhead_trails();
+        let trailhead_trails = map.find_trailhead_trails(FindTrailRule::Any);
 
         assert_eq!(1, trailhead_trails.len());
 
@@ -233,12 +248,89 @@ mod tests {
 
     #[test]
     fn simple_example() {
-        let map = Map::from(SIMPLE_EXAMPLE);
+        let input = r"
+89010123
+78121874
+87430965
+96549874
+45678903
+32019012
+01329801
+10456732
+    ".trim();
 
-        let trailhead_trails = map.find_trailhead_trails();
+        let map = Map::from(input);
+
+        let trailhead_trails = map.find_trailhead_trails(FindTrailRule::Any);
 
         let score = score_trails(&trailhead_trails);
 
         assert_eq!(36, score);
+    }
+
+    #[test]
+    fn all_trails_single() {
+        let input = r"
+.....0.
+..4321.
+..5..2.
+..6543.
+..7..4.
+..8765.
+..9....
+        ".trim();
+
+        let map = Map::from(input);
+
+        let trailhead_trails = map.find_trailhead_trails(FindTrailRule::All);
+        assert_eq!(1, trailhead_trails.len());
+
+        let trails = trailhead_trails.get(&5).unwrap();
+
+        assert_eq!(3, trails.len());
+    }
+
+    #[test]
+    fn all_trails_thirteen() {
+        let input = r"
+..90..9
+...1.98
+...2..7
+6543456
+765.987
+876....
+987....
+        ".trim();
+
+        let map = Map::from(input);
+
+        let trailhead_trails = map.find_trailhead_trails(FindTrailRule::All);
+        assert_eq!(1, trailhead_trails.len());
+
+        let trails = trailhead_trails.get(&3).unwrap();
+
+        assert_eq!(13, trails.len());
+    }
+
+    #[test]
+    fn all_trails_rating() {
+        let input = r"
+89010123
+78121874
+87430965
+96549874
+45678903
+32019012
+01329801
+10456732
+        ".trim();
+
+        let map = Map::from(input);
+
+        let trailhead_trails = map.find_trailhead_trails(FindTrailRule::All);
+        
+        let rating = rate_trails(&trailhead_trails);
+
+        assert_eq!(81, rating);
     }
 }
