@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BinaryHeap, HashMap};
 
 use utils::{Direction, Grid};
 
@@ -12,20 +12,105 @@ pub struct Map {
 }
 
 impl Map {
-    pub fn find_all_trails(&self) -> HashMap<usize, Vec<Path>> {
-        let mut all_trails = HashMap::new();
+    pub fn find_trailhead_trails(&self) -> HashMap<usize, Vec<Path>> {
+        let mut trailhead_trails: HashMap<usize, Vec<Path>> = HashMap::new();
 
         for trailhead in self.trailhead_locations.iter() {
             for destination in self.destination_locations.iter() {
-                let trails = find_trails(&self.grid, &self.flattened_topography, *trailhead, *destination);
+                let trail = find_longest_trail(&self.grid, &self.flattened_topography, *trailhead, *destination);
 
-                all_trails.insert(*trailhead, trails);
+                if let Some(trail) = trail {
+                    let trails = trailhead_trails.entry(*trailhead).or_default();
+                    trails.push(trail);
+                }
             }
         }
 
-        all_trails
+        trailhead_trails
     }
 }
+
+pub fn find_longest_trail(grid: &Grid, flattened_topography: &str, start: usize, end: usize) -> Option<Path> {
+    let mut trails: BinaryHeap<Location> = BinaryHeap::new();
+    trails.push(Location::from(start));
+
+    let mut came_from: HashMap<usize, usize> = HashMap::new();
+
+    let mut found_end = false;
+
+    while !trails.is_empty() {
+        let current = trails.pop().unwrap();
+
+        if current.index == end {
+            found_end = true;
+            break;
+        }
+
+        let current_position = grid.get_position(current.index).unwrap();
+        let current_value = flattened_topography.chars().nth(current.index).unwrap();
+
+        for direction in Direction::orthogonal() {
+            let adjacent_position = current_position.adjacent(*direction);
+            if !grid.validate_position(&adjacent_position, false) {
+                continue;
+            }
+            let adjacent = grid.get_index(&adjacent_position).unwrap();
+            let adjacent_value = flattened_topography.chars().nth(adjacent).unwrap();
+
+            if valid_move(current_value, adjacent_value) {
+                trails.push(Location::from(adjacent));
+                came_from.insert(adjacent, current.index);
+            }
+        }
+    }
+
+    if !found_end {
+        None
+    } else {
+        let mut path = vec![end];
+        let mut current = end;
+
+        while current != start {
+            let prev = came_from[&current];
+            path.insert(0, prev);
+            current = prev;
+        }
+
+        Some(path)
+    }
+}
+
+struct Location {
+    index: usize
+}
+
+impl From<usize> for Location {
+    fn from(value: usize) -> Self {
+        Self { index: value }
+    }
+}
+
+impl PartialEq for Location {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+impl Eq for Location {}
+
+impl PartialOrd for Location {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Location {
+    fn cmp(&self, _other: &Self) -> std::cmp::Ordering {
+        std::cmp::Ordering::Equal
+    }
+}
+
+
 
 pub fn find_trails(grid: &Grid, flattened_topography: &str, start: usize, destination: usize) -> Vec<Path> {
     let mut final_paths = vec![];
@@ -81,7 +166,7 @@ fn valid_move(from: char, to: char) -> bool {
     to > from && to - from == 1
 }
 
-pub fn score_trails(trails: HashMap<usize, Vec<Path>>) -> usize {
+pub fn score_trails(trails: &HashMap<usize, Vec<Path>>) -> usize {
     trails.values()
         .map(|p| p.len())
         .sum()
@@ -119,14 +204,41 @@ mod tests {
 9876
     ";
 
+    const SIMPLE_EXAMPLE : &'static str = r"
+89010123
+78121874
+87430965
+96549874
+45678903
+32019012
+01329801
+10456732
+    ";
+
     #[test]
-    fn example() {
+    fn basic_example() {
         let map = Map::from(BASIC_EXAMPLE);
 
-        let all_trails = map.find_all_trails();
+        let trailhead_trails = map.find_trailhead_trails();
 
-        let trails = all_trails.get(&0).unwrap();
+        assert_eq!(1, trailhead_trails.len());
 
-        assert_eq!(4, trails.len());
+        let trails = trailhead_trails.get(&0).unwrap();
+
+        assert_eq!(1, trails.len());
+
+        let score = score_trails(&trailhead_trails);
+        assert_eq!(1, score);
+    }
+
+    #[test]
+    fn simple_example() {
+        let map = Map::from(SIMPLE_EXAMPLE);
+
+        let trailhead_trails = map.find_trailhead_trails();
+
+        let score = score_trails(&trailhead_trails);
+
+        assert_eq!(36, score);
     }
 }
