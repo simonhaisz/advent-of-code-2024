@@ -25,11 +25,11 @@ impl Map {
 }
 
 pub fn find_trailhead_trails(grid: &Grid, flattened_topography: &str, trailhead: usize) -> Vec<Path> {
-    
+    unimplemented!()
 }
 
 fn find_trailhead_trails_inner(grid: &Grid, flattened_topography: &str, paths: Vec<Path>) {
-
+    unimplemented!()
 }
 
 pub fn score_trails(trails: HashMap<usize, Vec<Path>>) -> usize {
