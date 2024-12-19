@@ -33,6 +33,52 @@ impl Direction {
         ]
     }
 
+    pub fn orthogonal_delta(a: Direction, b: Direction) -> u8 {
+        let delta = (a as isize - b as isize).abs();
+
+        u8::try_from(delta).unwrap() / 2
+    }
+
+    pub fn orthogonal_next(&self) -> Direction {
+        match *self {
+            Direction::North => Direction::East,
+            Direction::East => Direction::South,
+            Direction::South => Direction::West,
+            Direction::West => Direction::North,
+            _ => panic!("Orthogonal only supports North, East, South, and West")
+        }
+    }
+
+    pub fn orthogonal_previous(&self) -> Direction {
+        match *self {
+            Direction::North => Direction::West,
+            Direction::East => Direction::North,
+            Direction::South => Direction::East,
+            Direction::West => Direction::South,
+            _ => panic!("Orthogonal only supports North, East, South, and West")
+        }
+    }
+
+    pub fn orthogonal_flip(&self) -> Direction {
+        match *self {
+            Direction::North => Direction::South,
+            Direction::East => Direction::West,
+            Direction::South => Direction::North,
+            Direction::West => Direction::East,
+            _ => panic!("Orthogonal only supports North, East, South, and West")
+        }
+    }
+
+    pub fn orthogonal_rotate(&self, clicks: u8) -> Direction {
+        let mut direction = *self;
+
+        for _ in 0..clicks {
+            direction = direction.orthogonal_next();
+        }
+
+        direction
+    }
+
     pub fn line(&self) -> (bool, bool) {
         match *self {
             Direction::North => {
