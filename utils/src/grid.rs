@@ -1,4 +1,5 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Direction {
     North,
     NorthEast,
@@ -111,7 +112,7 @@ impl Direction {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Position(pub i32, pub i32);
 
 impl Position {
@@ -215,4 +216,65 @@ impl Grid {
     
         (input.replace("\n", ""), grid)
     }
+
+    pub fn predict_move(&self, origin: &Position, velocity: &Velocity) -> Position {
+        let new_row = origin.0 + velocity.0;
+        let new_column = origin.1 + velocity.1;
+
+        let new_row = new_row.rem_euclid(self.row_count);
+        let new_column = new_column.rem_euclid(self.column_count);
+
+        Position(new_row, new_column)
+    }
+
+    pub fn quadrant(&self, index: usize) -> Option<Direction> {
+        let center_skip_width = 1;
+
+        let position = self.get_position(index).unwrap();
+
+        let center_row = self.row_count / 2;
+
+        let center_row_range = center_row - center_skip_width + 1..=center_row + center_skip_width - 1;
+
+        let center_column = self.column_count / 2;
+
+        let center_column_range = center_column - center_skip_width + 1..=center_column + center_skip_width - 1;
+
+        if center_row_range.contains(&position.0) || center_column_range.contains(&position.1) {
+            None
+        } else {
+            let top_side = if position.0 < *center_row_range.start() {
+                true
+            } else if position.0 > *center_row_range.end() {
+                false
+            } else {
+                panic!("Position does not fit in left or right side")
+            };
+
+            let left_side = if position.1 < *center_column_range.start() {
+                true
+            } else if position.1 > *center_column_range.end() {
+                false
+            } else {
+                panic!("Position does not fit in top or bottom side")
+            };
+
+            let quadrant = if top_side && left_side {
+                Direction::NorthWest
+            } else if top_side && !left_side {
+                Direction::NorthEast
+            } else if !top_side && !left_side {
+                Direction::SouthEast
+            } else if !top_side && left_side {
+                Direction::SouthWest
+            } else {
+                panic!("Position does not fit into any quadrant")
+            };
+
+            Some(quadrant)
+        }
+    }
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Velocity(pub i32, pub i32);

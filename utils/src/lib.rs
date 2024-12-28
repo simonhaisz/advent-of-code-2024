@@ -6,4 +6,4 @@ pub use timer::Timer;
 
 pub use part::{Part, part_selection};
 
-pub use grid::{Position, Direction, Grid};
+pub use grid::{Position, Direction, Grid, Velocity};
