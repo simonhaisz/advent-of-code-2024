@@ -100,6 +100,11 @@ impl Plot {
             return 4;
         }
 
+        let mut fenced_locations = self.locations.iter()
+            .filter(|l| self.location_fencing.contains_key(l))
+            .map(|l| *l)
+            .collect::<HashSet<_>>();
+
         let mut fencing_side_count =1;
 
         let start = *self.locations.first().unwrap();
@@ -108,6 +113,9 @@ impl Plot {
         let mut current_direction: Option<Direction> = None;
 
         loop {
+
+            fenced_locations.remove(&current_location);
+
             let current_position = grid.get_position(current_location).unwrap();
 
             let fencing = self.location_fencing.get(&current_location);
@@ -146,7 +154,7 @@ impl Plot {
             current_location = next_location;
             current_direction.replace(next_direction);
             
-            if current_location == start {
+            if current_location == start && fenced_locations.is_empty() {
                 let mut current_direction = current_direction.unwrap();
                 
                 loop {
@@ -300,12 +308,31 @@ EXXXX
 EEEEE
 EXXXX
 EEEEE
-        ";
+        ".trim();
 
         let garden = Garden::from(input);
 
         let bulk_fencing_price = garden.bulk_fencing_price();
 
         assert_eq!(236, bulk_fencing_price);
+    }
+
+    #[ignore = "inner fence"]
+    #[test]
+    fn find_bulk_fencing_price_abba() {
+        let input = r"
+AAAAAA
+AAABBA
+AAABBA
+ABBAAA
+ABBAAA
+AAAAAA
+        ".trim();
+
+        let garden = Garden::from(input);
+
+        let bulk_fencing_price = garden.bulk_fencing_price();
+
+        assert_eq!(368, bulk_fencing_price);
     }
 }

@@ -1,0 +1,21 @@
+INTEGER = { ASCII_DIGIT+ }
+
+value = { INTEGER }
+
+a_button = { "Button A: X+" ~ value ~ ", Y+" ~ value }
+b_button = { "Button B: X+" ~ value ~ ", Y+" ~ value }
+prize = { "Prize: X=" ~ value ~ ", Y=" ~ value }
+
+machine = {
+	a_button ~ NEWLINE ~
+    b_button ~ NEWLINE ~
+    prize
+}
+
+file = {
+	SOI ~
+    (machine ~ NEWLINE+)* ~
+    EOI
+}
+
+WHITESPACE = _{ " " }
