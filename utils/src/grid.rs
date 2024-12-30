@@ -112,6 +112,23 @@ impl Direction {
     }
 }
 
+const DIRECTION_UP: char = '^';
+const DIRECTION_RIGHT: char = '>';
+const DIRECTION_DOWN: char = 'v';
+const DIRECTION_LEFT: char = '<';
+
+impl From<char> for Direction {
+    fn from(c: char) -> Self {
+        match c {
+            DIRECTION_UP => Direction::North,
+            DIRECTION_DOWN => Direction::South,
+            DIRECTION_RIGHT => Direction::East,
+            DIRECTION_LEFT => Direction::West,
+            _ => panic!("Unexpected direction char '{c}' - expected {DIRECTION_UP}, {DIRECTION_RIGHT}, {DIRECTION_DOWN}, {DIRECTION_LEFT}")
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Position(pub i32, pub i32);
 
