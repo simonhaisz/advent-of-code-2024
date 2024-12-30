@@ -12,9 +12,9 @@ machine = {
     prize
 }
 
-file = {
+lobby = {
 	SOI ~
-    (machine ~ NEWLINE+)* ~
+    machine ~ (NEWLINE+ ~ machine)* ~
     EOI
 }
 
