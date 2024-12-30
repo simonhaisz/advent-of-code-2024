@@ -8,7 +8,7 @@ pub struct Lobby {
 }
 
 impl Lobby {
-	pub fn total_cost(&self) -> u32 {
+	pub fn total_cost(&self) -> u64 {
 		self.machines.iter()
 			.map(|m| m.solve_prize())
 			.filter(|m| m.is_some())
@@ -21,8 +21,8 @@ impl Lobby {
 #[grammar = "lobby.pest"]
 struct LobbyParser;
 
-impl From<&str> for Lobby {
-	fn from(text: &str) -> Self {
+impl From<(&str, Option<u64>)> for Lobby {
+	fn from((text, claw_offset): (&str, Option<u64>)) -> Self {
 		let parsed_machines = LobbyParser::parse(Rule::lobby, text)
 			.expect("failed to parse machines")
 			.next().unwrap();
@@ -54,7 +54,12 @@ impl From<&str> for Lobby {
 
 					let a_button = a_button.unwrap();
 					let b_button = b_button.unwrap();
-					let prize = prize.unwrap();
+					let mut prize = prize.unwrap();
+
+					if let Some(claw_offset) = claw_offset {
+						prize.0 += claw_offset;
+						prize.1 += claw_offset;
+					}
 
 					machines.push(Machine{ a_button, b_button, prize });
 				},
@@ -77,8 +82,8 @@ fn extract_xy(mut prop_pair: Pairs<'_, Rule>) -> XY {
 	XY(x, y)
 }
 
-fn parse_value(value: &Pair<'_, Rule>) -> u32 {
-	value.as_str().parse::<u32>().unwrap()
+fn parse_value(value: &Pair<'_, Rule>) -> u64 {
+	value.as_str().parse::<_>().unwrap()
 }
 
 #[cfg(test)]
@@ -105,7 +110,7 @@ Prize: X=18641, Y=10279
 
 	#[test]
 	fn parse_example() {
-		let lobby = Lobby::from(EXAMPLE.trim());
+		let lobby = Lobby::from((EXAMPLE.trim(), None));
 
 		assert_eq!(
 			Lobby { machines: vec![
@@ -120,10 +125,19 @@ Prize: X=18641, Y=10279
 
 	#[test]
 	fn cost_example() {
-		let lobby = Lobby::from(EXAMPLE.trim());
+		let lobby = Lobby::from((EXAMPLE.trim(), None));
 
 		let total_cost = lobby.total_cost();
 
 		assert_eq!(480, total_cost);
+	}
+
+	#[test]
+	fn cost_claw_offset_example() {
+		let lobby = Lobby::from((EXAMPLE.trim(), Some(10000000000000)));
+
+		let total_cost = lobby.total_cost();
+
+		assert_eq!(875318608908, total_cost);
 	}
 }

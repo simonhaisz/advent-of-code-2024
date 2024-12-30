@@ -6,13 +6,13 @@ pub struct Machine {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct XY(pub u32, pub u32);
+pub struct XY(pub u64, pub u64);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct AB(pub u32, pub u32);
+pub struct AB(pub u64, pub u64);
 
 impl AB {
-	pub fn cost(&self) -> u32 {
+	pub fn cost(&self) -> u64 {
 		self.0 * 3 + self.1
 	}
 }
@@ -53,7 +53,7 @@ fn solve_prize(a_button: &XY, b_button: &XY, prize: &XY) -> Option<AB> {
 	let computed_y = a_y * a + b_y * b;
 
 	if computed_x == prize_x && computed_y == prize_y {
-		Some(AB(u32::try_from(a).unwrap(), u32::try_from(b).unwrap()))
+		Some(AB(a as u64, b as u64))
 	} else {
 		None
 	}
