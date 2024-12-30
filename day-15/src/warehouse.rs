@@ -18,10 +18,10 @@ enum WarehouseContent {
 }
 
 impl Warehouse {
-    pub fn move_robot(&mut self, movements: &[Direction]) {
+    pub fn move_robot(&mut self) {
         let mut robot_position = self.grid.get_position(self.robot_location).unwrap();
 
-        for m in movements.iter() {
+        for m in self.robot_movement.iter() {
             let possible_position = robot_position.adjacent(*m);
 
             let possible_content = self.get_content(&possible_position);
@@ -77,14 +77,13 @@ impl Warehouse {
 
                             self.boxes.insert(moved_box_location);
                         }
-
                     }
                 },
             }
         }
     }
 
-    pub fn get_content(&self, position: &Position) -> WarehouseContent {
+    fn get_content(&self, position: &Position) -> WarehouseContent {
         // not worrying about out-of-bounds because assuming that there are walls all around
         let location = self.grid.get_index(position).unwrap();
         
@@ -95,6 +94,13 @@ impl Warehouse {
         } else {
             WarehouseContent::Empty
         }
+    }
+
+    pub fn robot_gps_total(&self) -> u32 {
+        self.boxes.iter()
+            .map(|i| self.grid.get_position(*i).unwrap())
+            .map(|p| (p.0 * 100 + p.1) as u32)
+            .sum()
     }
 }
 
@@ -148,13 +154,77 @@ impl From<&str> for Warehouse {
             }
         }
 
-        let robot_location = robot_location.unwrap()
+        let robot_location = robot_location.unwrap();
 
         let robot_movement = movement_line.chars()
             .map(|c| Direction::from(c))
-            .collect::<Vec<_>>();
+            .collect::<Vec<Direction>>();
 
         Self { grid, walls, boxes, robot_location, robot_movement }
 
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn small_example() {
+        let text = r"
+########
+#..O.O.#
+##@.O..#
+#...O..#
+#.#.O..#
+#...O..#
+#......#
+########
+
+<^^>>>vv<v>>v<<
+        ".trim();
+
+        let mut warehouse = Warehouse::from(text);
+
+        warehouse.move_robot();
+
+        let robot_gps_total = warehouse.robot_gps_total();
+
+        assert_eq!(2028, robot_gps_total);
+    }
+
+    #[test]
+    fn example() {
+        let text = r"
+##########
+#..O..O.O#
+#......O.#
+#.OO..O.O#
+#..O@..O.#
+#O#..O...#
+#O..O..O.#
+#.OO.O.OO#
+#....O...#
+##########
+
+<vv>^<v^>v>^vv^v>v<>v^v<v<^vv<<<^><<><>>v<vvv<>^v^>^<<<><<v<<<v^vv^v>^
+vvv<<^>^v^^><<>>><>^<<><^vv^^<>vvv<>><^^v>^>vv<>v<<<<v<^v>^<^^>>>^<v<v
+><>vv>v^v^<>><>>>><^^>vv>v<^^^>>v^v^<^^>v^^>v^<^v>v<>>v^v^<v>v^^<^^vv<
+<<v<^>>^^^^>>>v^<>vvv^><v<<<>^^^vv^<vvv>^>v<^^^^v<>^>vvvv><>>v^<<^^^^^
+^><^><>>><>^^<<^^v>>><^<v>^<vv>>v>>>^v><>^v><<<<v>>v<v<v>vvv>^<><<>^><
+^>><>^v<><^vvv<^^<><v<<<<<><^v<<<><<<^^<v<^^^><^>>^<v^><<<^>>^v<v^v<v^
+>^>>^v>vv>^<<^v<>><<><<v<<v><>v<^vv<<<>^^v^>^^>>><<^v>>v^v><^^>>^<>vv^
+<><^^>^^^<><vvvvv^v<v<<>^v<v>v<<^><<><<><<<^^<<<^<<>><<><^^^>^^<>^>v<>
+^^>vv<^v^v<vv>^<><v<^v>^^^>>>^^vvv^>vvv<>>>^<^>>>>>^<<^v>^vvv<>^<><<v>
+v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^
+        ".trim();
+
+        let mut warehouse = Warehouse::from(text);
+
+        warehouse.move_robot();
+
+        let robot_gps_total = warehouse.robot_gps_total();
+
+        assert_eq!(10092, robot_gps_total);
     }
 }
