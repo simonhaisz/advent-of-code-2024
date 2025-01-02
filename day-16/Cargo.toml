@@ -1,0 +1,11 @@
+[package]
+name = "day-16"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "day-16"
+doctest = false
+
+[dependencies]
+utils = { path = "../utils" }
