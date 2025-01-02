@@ -12,12 +12,22 @@ fn main() {
 
     match part {
         Part::One => part_1(&text),
-        Part::Two => unimplemented!(),
+        Part::Two => part_2(&text),
     }
 }
 
 fn part_1(text: &str) {
     let mut warehouse = Warehouse::from(text);
+
+    warehouse.move_robot();
+
+    let robot_gps_total = warehouse.robot_gps_total();
+
+    println!("{robot_gps_total}");
+}
+
+fn part_2(text: &str) {
+    let mut warehouse = Warehouse::from(text).embiggen();
 
     warehouse.move_robot();
 

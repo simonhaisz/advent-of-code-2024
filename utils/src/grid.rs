@@ -1,3 +1,5 @@
+use core::fmt;
+
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Direction {
@@ -9,6 +11,23 @@ pub enum Direction {
     SouthWest,
     West,
     NorthWest,
+}
+
+impl fmt::Display for Direction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let text = match *self {
+            Direction::North => "North",
+            Direction::NorthEast => "NorthEast",
+            Direction::East => "East",
+            Direction::SouthEast => "SouthEast",
+            Direction::South => "South",
+            Direction::SouthWest => "SouthWest",
+            Direction::West => "West",
+            Direction::NorthWest => "NorthWest",
+        };
+
+        write!(f, "{text}")
+    }
 }
 
 impl Direction {

@@ -114,25 +114,6 @@
             },
             "args": ["--part-2"],
             "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "cppvsdbg",
-            "request": "launch",
-            "name": "Debug unit tests in executable 'day-12' (Windows)",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--bin=day-12",
-                    "--package=day-12"
-                ],
-                "filter": {
-                    "name": "day-12",
-                    "kind": "bin"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
+        }
     ]
 }
