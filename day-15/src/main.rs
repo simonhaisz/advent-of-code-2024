@@ -19,7 +19,7 @@ fn main() {
 fn part_1(text: &str) {
     let mut warehouse = Warehouse::from(text);
 
-    warehouse.move_robot();
+    warehouse.move_robot(false);
 
     let robot_gps_total = warehouse.robot_gps_total();
 
@@ -29,7 +29,7 @@ fn part_1(text: &str) {
 fn part_2(text: &str) {
     let mut warehouse = Warehouse::from(text).embiggen();
 
-    warehouse.move_robot();
+    warehouse.move_robot(false);
 
     let robot_gps_total = warehouse.robot_gps_total();
 

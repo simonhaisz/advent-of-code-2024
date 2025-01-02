@@ -126,15 +126,18 @@ impl Warehouse {
         Self { grid, walls, boxes, robot_location, robot_movement, warehouse_type }
     }
 
-    pub fn move_robot(&mut self) {
+    pub fn move_robot(&mut self, debug_moves: bool) {
 
         let mut robot_position = self.grid.get_position(self.robot_location).unwrap();
 
-        for (_count, m) in self.robot_movement.iter().enumerate() {
-            // println!("{self}");
+        for (count, m) in self.robot_movement.iter().enumerate() {
 
-            // println!("{count} -> {m}");
-            // println!();
+            if debug_moves {
+                println!("{self}");
+
+                println!("{count} -> {m}");
+                println!();
+            }
 
             let possible_position = robot_position.adjacent(*m);
 
@@ -387,7 +390,7 @@ mod tests {
 
         let mut warehouse = Warehouse::from(text);
 
-        warehouse.move_robot();
+        warehouse.move_robot(false);
 
         let robot_gps_total = warehouse.robot_gps_total();
 
@@ -422,7 +425,7 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^
 
         let mut warehouse = Warehouse::from(text);
 
-        warehouse.move_robot();
+        warehouse.move_robot(false);
 
         let robot_gps_total = warehouse.robot_gps_total();
 
@@ -447,7 +450,7 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^
 
         let mut warehouse = warehouse.embiggen();
 
-        warehouse.move_robot();
+        warehouse.move_robot(false);
 
         let robot_gps_total = warehouse.robot_gps_total();
 
@@ -483,7 +486,7 @@ v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^
         let warehouse = Warehouse::from(text);
         let mut warehouse = warehouse.embiggen();
 
-        warehouse.move_robot();
+        warehouse.move_robot(false);
 
         let robot_gps_total = warehouse.robot_gps_total();
 
