@@ -1,4 +1,4 @@
-use std::collections::{BinaryHeap, HashMap, HashSet};
+use std::{collections::{BinaryHeap, HashMap, HashSet}, hash::Hash};
 
 use utils::{Direction, Grid, Position};
 
@@ -66,15 +66,34 @@ struct Vector {
     direction: Direction,
 }
 
+impl Vector {
+    fn new(location: usize, position: Position, direction: Direction) -> Self {
+        Self { location, position, direction }
+    }
+}
+
+impl PartialEq for Vector {
+    fn eq(&self, other: &Self) -> bool {
+        self.location == other.location && self.direction == other.direction
+    }
+}
+
+impl Eq for Vector {}
+
+impl Hash for Vector {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.location.hash(state);
+        self.direction.hash(state);
+    }
+}
+
 struct ScoreVector {
     score: u32,
     vector: Vector,
 }
 
 impl ScoreVector {
-    fn new(location: usize, position: Position, direction: Direction, score: u32) -> Self {
-        let vector = Vector { location, position, direction };
-
+    fn new(vector: Vector, score: u32) -> Self {
         Self { score, vector }
     }
 }
@@ -95,7 +114,8 @@ impl PartialOrd for ScoreVector {
 
 impl Ord for ScoreVector {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.score.cmp(&other.score)
+        // self.score.cmp(&other.score)
+        other.score.cmp(&self.score)
     }
 }
 
@@ -103,13 +123,15 @@ fn find_lowest_score_route(maze: &Maze, start_location: usize, end_location: usi
     let start_position = maze.grid.get_position(start_location).unwrap();
     let start_direction = Direction::East;
 
+    let start_vector = Vector::new(start_location, start_position, start_direction);
+
     let mut frontier = BinaryHeap::new();
-    frontier.push(ScoreVector::new(start_location, start_position, start_direction, 0));
+    frontier.push(ScoreVector::new(start_vector.clone(), 0));
 
     let mut came_from = HashMap::new();
     
     let mut score_so_far = HashMap::new();
-    score_so_far.insert(start_location, 0);
+    score_so_far.insert(start_vector, 0);
 
     let mut score = None;
 
@@ -124,16 +146,22 @@ fn find_lowest_score_route(maze: &Maze, start_location: usize, end_location: usi
         for next_direction in Direction::orthogonal() {
             let next_position = current.vector.position.adjacent(*next_direction);
             if let Ok(next_location) = maze.grid.get_index(&next_position) {
+                if maze.wall_locations.contains(&next_location) {
+                    continue;
+                }
                 let rotation = Direction::orthogonal_delta(current.vector.direction, *next_direction) as u32;
-                let next_score = score_so_far[&current.vector.location] + 1 + rotation * 1000;
+                let next_score = score_so_far[&current.vector] + 1 + rotation * 1000;
                 
-                if !score_so_far.contains_key(&next_location) || next_score < score_so_far[&next_location] {
-                    score_so_far.insert(next_location, next_score);
+                let next_vector = Vector::new(next_location, next_position, *next_direction);
 
-                    let next_score_vector = ScoreVector::new(next_location, next_position, *next_direction, next_score);
+                if !score_so_far.contains_key(&next_vector) || next_score < score_so_far[&next_vector] {
+
+                    score_so_far.insert(next_vector.clone(), next_score);
+
+                    let next_score_vector = ScoreVector::new(next_vector.clone(), next_score);
                     frontier.push(next_score_vector);
 
-                    came_from.insert(next_location, current.vector.location);
+                    came_from.insert(next_vector, current.vector.location);
                 }
             }
         }
