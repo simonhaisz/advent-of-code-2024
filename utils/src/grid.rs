@@ -148,6 +148,18 @@ impl From<char> for Direction {
     }
 }
 
+impl Direction {
+    pub fn to_char(&self) -> char {
+        match *self {
+            Direction::North => DIRECTION_UP,
+            Direction::East => DIRECTION_RIGHT,
+            Direction::South => DIRECTION_DOWN,
+            Direction::West => DIRECTION_LEFT,
+            _ => panic!("direction is not orthogonal - {self:?}")
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Position(pub i32, pub i32);
 

@@ -131,7 +131,7 @@ fn find_lowest_score_route(maze: &Maze, start_location: usize, end_location: usi
     let mut came_from = HashMap::new();
     
     let mut score_so_far = HashMap::new();
-    score_so_far.insert(start_vector, 0);
+    score_so_far.insert(start_vector.clone(), 0);
 
     let mut score = None;
 
@@ -144,13 +144,23 @@ fn find_lowest_score_route(maze: &Maze, start_location: usize, end_location: usi
         }
 
         for next_direction in Direction::orthogonal() {
+            let rotation = Direction::orthogonal_delta(current.vector.direction, *next_direction);
+            if rotation == 2 {
+                // println!("{} - {}", current.vector.direction.to_char(), next_direction.to_char());
+                continue;
+            }
             let next_position = current.vector.position.adjacent(*next_direction);
             if let Ok(next_location) = maze.grid.get_index(&next_position) {
                 if maze.wall_locations.contains(&next_location) {
                     continue;
                 }
-                let rotation = Direction::orthogonal_delta(current.vector.direction, *next_direction) as u32;
-                let next_score = score_so_far[&current.vector] + 1 + rotation * 1000;
+                let mut next_score = score_so_far[&current.vector];
+                next_score += 1;
+                if rotation != 0 {
+                    next_score += 1000;
+                }
+
+                let next_score = next_score;
                 
                 let next_vector = Vector::new(next_location, next_position, *next_direction);
 
@@ -161,10 +171,77 @@ fn find_lowest_score_route(maze: &Maze, start_location: usize, end_location: usi
                     let next_score_vector = ScoreVector::new(next_vector.clone(), next_score);
                     frontier.push(next_score_vector);
 
-                    came_from.insert(next_vector, current.vector.location);
+                    came_from.insert(next_vector, current.vector.clone());
                 }
             }
         }
+    }
+
+    
+
+    if let Some(end_vector) = came_from.keys().find(|k| k.location == end_location) {
+        let mut path = vec![];
+        let mut movement = HashMap::new();
+        let mut current = end_vector;
+
+        while *current != start_vector {
+            if let Some(previous) = came_from.get(current) {
+                path.insert(0, previous.clone());
+                movement.insert(previous.location, previous.clone());
+                current = previous
+            } else {
+                panic!("Cannot trace trail back to ({}, {})", current.position.0, current.position.1);
+            }
+        }
+
+        for row in 0..maze.grid.row_count {
+            for column in 0..maze.grid.column_count {
+
+                let position = Position(row, column);
+                let location = maze.grid.get_index(&position).unwrap();
+
+                if maze.wall_locations.contains(&location) {
+                    print!("{WALL}");
+                // } else if maze.start_location == location {
+                //     print!("{START}");
+                // } else if maze.end_location == location {
+                //     print!("{END}");
+                } else if let Some(m) = movement.get(&location) {
+                    let c = m.direction.to_char();
+
+                    print!("{c}");
+                } else {
+                    print!("{EMPTY}");
+                }
+            }
+
+            println!();
+        }
+
+        let mut s = 0;
+        let mut previous = None;
+
+        for (i, m) in path.iter().enumerate() {
+            if i != 0 {
+                let p: Vector = previous.take().unwrap();
+
+                let rotation = Direction::orthogonal_delta(p.direction, m.direction) as u32;
+
+                if rotation == 2 {
+                    panic!("Too much rotation");
+                }
+
+                s += 1;
+
+                if rotation != 0 {
+                    s += 1000;
+                }
+            }
+
+            previous.replace(m.clone());
+        }
+
+        println!("Computed score {s}");
     }
 
     score
